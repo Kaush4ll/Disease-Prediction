@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Disease Predictor</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(to right, #667eea, #764ba2);
+    margin: 0;
+}
+.container {
+    background: white;
+    padding: 30px;
+    margin: 40px auto;
+    width: 500px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+h1 {
+    text-align: center;
+    color: #2c3e50;
+}
+.symptoms {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+label {
+    display: block;
+    padding: 5px;
+}
+button {
+    width: 100%;
+    padding: 12px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+button:hover {
+    background: #5a67d8;
+}
+.result {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f0f9ff;
+    border-radius: 10px;
+}
+canvas {
+    margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h1>🩺 Disease Prediction</h1>
+
+{% if error %}
+<div style="color:red; font-weight:bold; text-align:center;">
+    {{ error }}
+</div>
+{% endif %}
+
+<form method="POST" id="symptomForm">
+<div class="symptoms">
+{% for symptom in symptoms %}
+<label>
+<input type="checkbox" name="{{ symptom }}"> {{ symptom.replace('_',' ') }}
+</label>
+{% endfor %}
+</div>
+
+<button type="submit" id="predictBtn" disabled>Predict Disease</button>
+</form>
+
+{% if predictions %}
+<div class="result">
+<h2>Top Predictions</h2>
+
+<ul>
+{% for p in predictions %}
+<li><b>{{ p.disease }}</b> - {{ p.probability }}%</li>
+{% endfor %}
+</ul>
+
+<p><b>Explanation:</b> {{ reason }}</p>
+<p><b>Advice:</b> {{ advice }}</p>
+
+<canvas id="chart"></canvas>
+</div>
+
+<script>
+const chartLabels = {{ predictions | map(attribute='disease') | list | tojson }};
+const chartData = {{ predictions | map(attribute='probability') | list | tojson }};
+
+new Chart(document.getElementById('chart'), {
+    type: 'bar',
+    data: {
+        labels: chartLabels,
+        datasets: [{
+            label: 'Probability %',
+            data: chartData
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+
+</div>
+
+<script>
+const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+const button = document.getElementById('predictBtn');
+const form = document.getElementById('symptomForm');
+
+// Enable button
+checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+        const anyChecked = Array.from(checkboxes).some(c => c.checked);
+        button.disabled = !anyChecked;
+    });
+});
+
+// Prevent empty submit
+form.addEventListener('submit', function(e) {
+    const anyChecked = Array.from(checkboxes).some(c => c.checked);
+
+    if (!anyChecked) {
+        e.preventDefault();
+        alert("Please select at least one symptom");
+    }
+});
+</script>
+
+</body>
+</html>
+
+    
